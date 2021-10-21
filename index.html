@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>Dashboard Kelompok 7 - Statistik HK</title>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
+        <link rel="stylesheet" href="./adminlte.min.css">
+        <!-- <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script> -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.5.1/chart.min.js" integrity="sha512-Wt1bJGtlnMtGP0dqNFH1xlkLBNpEodaiQ8ZN5JLA5wpc1sUlk/O5uuOMNgvzddzkpvZ9GLyYNa8w2s7rqiTk5Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+        <script src="https://code.jquery.com/jquery-3.5.0.js"></script>
+        <script src="https://d3js.org/d3.v7.min.js"></script>
+    </head>
+    <body class="sidebar-collapse">
+        <div class="wrapper">
+            <nav class="main-header navbar navbar-expand navbar-white navbar-light">
+                <!-- Navbar Kiri -->
+                <ul class="navbar-nav">
+                    <li class="navbar-item d-none d-sm-inline-block">
+                        <a href="./index.html" class="nav-link">Refresh</a>
+                    </li>
+                </ul>
+            </nav>
+            <div class="content-wrapper">
+                <div class="content-header">
+                    <div class="container-fluid">
+                        <div class="row mb-2">
+                            <div class="col-sm-6">
+                                <h1 class="m-0"><strong>Dashboard</strong></h1>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="content">
+                    <div class="container-fluid">
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <div class="flourish-embed flourish-chart" data-src="visualisation/7455539"><script src="https://public.flourish.studio/resources/embed.js"></script></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h3 class="card-title text-bold" style="padding: 6px;">Grafik Covid dan IHSG</h3>
+                                        <div class="card-tools">
+                                            <ul class="nav nav-pills ml-auto">
+                                                <li class="nav-item nav-tabs">
+                                                    <a class="nav-link active" href="#covid-dan-ihsg" data-toggle="tab">Semua</a>
+                                                </li>
+                                                <li class="nav-item nav-tabs">
+                                                    <a class="nav-link" href="#covid-saja" data-toggle="tab">Covid</a>
+                                                </li>
+                                                <li class="nav-item nav-tabs">
+                                                    <a class="nav-link" href="#ihsg-saja" data-toggle="tab">IHSG</a>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="tab-content">
+                                            <div class="graph chart tab-pane active" id="covid-dan-ihsg">
+                                                <canvas id="myChart1"></canvas>
+                                            </div>
+                                            <div class="graph chart tab-pane" id="covid-saja">
+                                                <canvas id="myChart2"></canvas>
+                                            </div>
+                                            <div class="graph chart tab-pane" id="ihsg-saja">
+                                                <canvas id="myChart3"></canvas>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <footer class="main-footer">
+                <strong>Copyright © Kelompok 7 - Statistik HK</strong>
+            </footer>
+        </div>
+        <script>
+            // Ambil data
+            d3.csv('./covidIHSGcsv.csv')
+                .then(grafik);
+
+
+            // Fungsi metode kuadratik
+            var abs = Math.abs;
+
+            function array_fill(i, n, v) {
+                var a = [];
+                for (; i < n; i++) {
+                    a.push(v);
+                }
+                return a;
+            }
+
+            function toFloat(data){
+                var dhFloat = []
+                
+                for(i=0;i<data.length;i++){
+                    dhFloat.push(parseFloat(data[i]))
+                }
+                return dhFloat
+            }
+
+            function gauss(A, x) {
+                //Index variables
+                var i, k, j;
+
+                var A_copy = [];
+                var x_copy = [];
+
+                //Copy A
+                for (var i = 0; i < A.length; ++i) {
+                    A_copy[i] = A[i].slice();
+                }
+
+                //Copy b
+                for (var i = 0; i < x.length; ++i) {
+                    x_copy[i] = x[i];
+                }
+                // Just make a single matrix
+                for (i = 0; i < A_copy.length; i++) {
+                    A_copy[i].push(x_copy[i]);
+                }
+                var n = A_copy.length;
+
+                for (i = 0; i < n; i++) {
+                    // Search for maximum in this column
+                    var maxEl = abs(A_copy[i][i]),
+                        maxRow = i;
+                    for (k = i + 1; k < n; k++) {
+                        if (abs(A_copy[k][i]) > maxEl) {
+                        maxEl = abs(A_copy[k][i]);
+                        maxRow = k;
+                        }
+                    }
+                    // Swap maximum row with current row (column by column)
+                    for (k = i; k < n + 1; k++) {
+                        var tmp = A_copy[maxRow][k];
+                        A_copy[maxRow][k] = A_copy[i][k];
+                        A_copy[i][k] = tmp;
+                    }
+                    // Make all rows below this one 0 in current column
+                    for (k = i + 1; k < n; k++) {
+                        var c = -A_copy[k][i] / A_copy[i][i];
+                        for (j = i; j < n + 1; j++) {
+                            if (i === j) {
+                                A_copy[k][j] = 0;
+                            } else {
+                                A_copy[k][j] += c * A_copy[i][j];
+                            }
+                        }
+                    }
+                }
+                // Solve equation Ax=b for an upper triangular matrix A
+                x_copy = array_fill(0, n, 0);
+                for (i = n - 1; i > -1; i--) {
+                    x_copy[i] = A_copy[i][n] / A_copy[i][i];
+                    for (k = i - 1; k > -1; k--) {
+                        A_copy[k][n] -= A_copy[k][i] * x_copy[i];
+                    }
+                }
+                return x_copy;
+            }
+
+            function kuadratik(x,y){
+                var n = x.length
+                var sigmax = 0
+                var sigmaxy = 0
+                var sigmax2y = 0
+                var sigmax2 = 0 
+                var sigmax3 = 0
+                var sigmay = 0
+                var sigmax4 = 0
+                var a = []
+                var b = []
+                dataY = []
+
+                for(i=0;i<n;i++){
+                    sigmax += x[i]
+                    sigmax2 += (x[i])**2
+                    sigmax3 += x[i]**3
+                    sigmax4 += x[i]**4
+                    sigmay += y[i]
+                    sigmaxy += x[i]*y[i]
+                    sigmax2y += (x[i]**2)*y[i]
+                }
+
+                a.push([])
+                a[0].push(new Array(3))
+                a[0][0] = +n
+                a[0][1] = +sigmax
+                a[0][2] = +sigmax2
+                a.push([])
+                a[1].push(new Array(3))
+                a[1][0] = +sigmax
+                a[1][1] = +sigmax2
+                a[1][2] = +sigmax3
+                a.push([])
+                a[2].push(new Array(3))
+                a[2][0] = +sigmax2
+                a[2][1] = +sigmax3
+                a[2][2] = +sigmax4
+
+                b[0] = +sigmay
+                b[1] = +sigmaxy
+                b[2] = +sigmax2y
+
+                var model = gauss(a,b)
+
+                for(i=0;i<n;i++){
+                    dataY.push(model[0]+model[1]*x[i]+model[2]*(x[i]**2))
+                }
+
+                return dataY
+            }
+
+            // Buat grafik
+            function grafik(covid){
+                var hariKe = covid.map(
+                    function(c) {
+                        return c.harike
+                    }
+                );
+
+                var labels = covid.map(
+                    function(c) {
+                        return c.date;
+                    }
+                );
+
+                var data_covid = covid.map(
+                    function(c){
+                        return c.covid;
+                    }
+                );
+
+                var data_ihsg = covid.map(
+                    function(c){
+                        return c.ihsg;
+                    }
+                );
+
+                var myChart1 = new Chart(
+                    document.getElementById('myChart1').getContext('2d'),
+                    {
+                        type: 'line',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Covid-19',
+                                backgroundColor: 'blue',
+                                borderColor: 'blue',
+                                borderWidth: 2,
+                                data: data_covid,
+                                tension: 0.1,
+                                pointHitRadius: 1000,
+                                radius: 0,
+                                interaction: {
+                                    intersect: false
+                                },
+                            },
+                            {
+                                label: 'Covid-19 kuadratik',
+                                backgroundColor: 'cyan',
+                                borderColor: 'cyan',
+                                borderWidth: 2,
+                                data: kuadratik(toFloat(hariKe),toFloat(data_covid)),
+                                tension: 0.1,
+                                borderDash: [10,10],
+                                pointHitRadius: 1000,
+                                radius: 0,
+                                interaction: {
+                                    intersect: false
+                                },
+                            }
+                            ,{
+                                label: 'IHSG',
+                                backgroundColor: 'red',
+                                borderColor: 'red',
+                                borderWidth: 2,
+                                data: data_ihsg,
+                                tension: 0.1,
+                                radius: 0,
+                                pointHitRadius: 1000,
+                                fill: false,
+                                interaction: {
+                                    intersect: false
+                                },
+                            },
+                            {
+                                label: 'ihsg kuadratik',
+                                backgroundColor: 'pink',
+                                borderColor: 'pink',
+                                borderWidth: 2,
+                                data: kuadratik(toFloat(hariKe),toFloat(data_ihsg)),
+                                tension: 0.1,
+                                borderDash: [10,10],
+                                pointHitRadius: 1000,
+                                radius: 0,
+                                interaction: {
+                                    intersect: false
+                                },
+                            }]
+                        },
+                        option: {
+                            responsive: true,
+                            scales: {
+                                x: {
+                                    display: true,
+                                    title: {
+                                        display: true,
+                                        text: 'Tanggal'
+                                    }
+                                },
+                                y: {
+                                    display: true,
+                                    title: {
+                                        display: true,
+                                        text: 'Value'
+                                    },
+                                }
+                            },
+                        }
+                    }
+                )
+
+                var myChart2 = new Chart(
+                    document.getElementById('myChart2').getContext('2d'),
+                    {
+                        type: 'line',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Covid-19',
+                                backgroundColor: 'blue',
+                                borderColor: 'blue',
+                                borderWidth: 2,
+                                data: data_covid,
+                                tension: 0.1,
+                                radius: 0,
+                                pointHitRadius: 1000,
+                                fill: false
+                            },
+                            {
+                                label: 'Covid-19 kuadratik',
+                                backgroundColor: 'cyan',
+                                borderColor: 'cyan',
+                                borderWidth: 2,
+                                data: kuadratik(toFloat(hariKe),toFloat(data_covid)),
+                                tension: 0.1,
+                                borderDash: [10,10],
+                                pointHitRadius: 1000,
+                                radius: 0,
+                                interaction: {
+                                    intersect: false
+                                },
+                            }]
+                        },
+                        option: {
+                            responsive: true,
+                            interaction: {
+                                intersect: false
+                            },
+                            scales: {
+                                x: {
+                                    display: true,
+                                    title: {
+                                        display: true,
+                                        text: 'Tanggal'
+                                    }
+                                },
+                                y: {
+                                    display: true,
+                                    title: {
+                                        display: true,
+                                        text: 'Value'
+                                    },
+                                }
+                            },
+                        }
+                    }
+                )
+
+                var myChart3 = new Chart(
+                    document.getElementById('myChart3').getContext('2d'),
+                    {
+                        type: 'line',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'IHSG',
+                                backgroundColor: 'red',
+                                borderColor: 'red',
+                                borderWidth: 2,
+                                data: data_ihsg,
+                                tension: 0.1,
+                                radius: 0,
+                                pointHitRadius: 1000,
+                                fill: false
+                            },
+                            {
+                                label: 'ihsg kuadratik',
+                                backgroundColor: 'pink',
+                                borderColor: 'pink',
+                                borderWidth: 2,
+                                data: kuadratik(toFloat(hariKe),toFloat(data_ihsg)),
+                                tension: 0.1,
+                                borderDash: [10,10],
+                                pointHitRadius: 1000,
+                                radius: 0,
+                                interaction: {
+                                    intersect: false
+                                },
+                            }]
+                        },
+                        option: {
+                            responsive: true,
+                            interaction: {
+                                intersect: false
+                            },
+                            scales: {
+                                x: {
+                                    display: true,
+                                    title: {
+                                        display: true,
+                                        text: 'Tanggal'
+                                    }
+                                },
+                                y: {
+                                    display: true,
+                                    title: {
+                                        display: true,
+                                        text: 'Value'
+                                    },
+                                }
+                            },
+                        }
+                    }
+                )
+            }
+        </script>
+        <script src="./bootstrap.bundle.min.js"></script>
+    </body>
+</html>
